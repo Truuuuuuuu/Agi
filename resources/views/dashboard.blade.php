@@ -17,7 +17,7 @@
 
     <div class="py-3" x-data="vaultApp()" x-init="init()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8  flex gap-5 w-full">
-            
+
             {{-- ── Upload ─────────────────────────────────────────────────────── --}}
             <div class="w-full max-w-sm flex flex-col gap-3">
                 <div class="bg-white p-5 rounded-3xl border">
@@ -44,11 +44,12 @@
                     </div>
                 </div>
 
-                <div class="bg-primary rounded-3xl relative overflow-hidden h-52 flex flex-col justify-center items-start pl-5">
+                <div
+                    class="bg-primary rounded-3xl relative overflow-hidden h-52 flex flex-col justify-center items-start pl-5">
                     <img src="{{ asset('images/agi_logo.png') }}"
                         class="absolute bottom-0 right-0 w-52 h-52 object-contain opacity-20" />
-                    <p class="text-xl font-bold text-white opacity-50">TOTAL FILES</p>    
-                    <h1 class="text-8xl font-bold text-white" x-text="files.length"></h1>
+                    <p class="text-xl font-bold text-white opacity-50">TOTAL FILES</p>
+                    <h1 class="text-8xl font-bold text-white">{{ (new \App\Models\EncryptedFile)->total_files }}</h1>
                 </div>
 
 
@@ -86,7 +87,7 @@
                     <thead class="text-left border-b">
                         <tr class="text-primary">
                             <th class="p-3">File</th>
-                            <th class="p-3">Type</th>
+                            <th class="p-3">Size</th>
                             <th class="p-3">Uploaded</th>
                             <th class="p-3">Actions</th>
                         </tr>
@@ -98,19 +99,34 @@
 
                                 <td class="p-3 font-medium" x-text="file.original_name"></td>
 
-                                <td class="p-3 text-xs text-gray-500" x-text="file.mime_type"></td>
+                                <td class="p-3 text-xs text-gray-500" x-text="file.size"></td>
 
                                 <td class="p-3 text-xs text-gray-500" x-text="file.uploaded_at"></td>
 
                                 <td class="p-3 flex gap-2">
 
-                                    <button @click="decryptAndDownload(file)" class="px-3 py-1 text-xs hover:scale-105 text-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+                                    <button @click="decryptAndDownload(file)"
+                                        class="px-3 py-1 text-xs hover:scale-105 text-primary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            class="lucide lucide-download-icon lucide-download">
+                                            <path d="M12 15V3" />
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <path d="m7 10 5 5 5-5" />
+                                        </svg>
                                     </button>
 
                                     <button @click="confirmDelete(file)"
                                         class="px-3 py-1 text-xs  text-red-500 hover:scale-105">
-                                        <svg xmlns="http://www.w3.org/2000/svg"  width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            class="lucide lucide-trash-icon lucide-trash">
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                            <path d="M3 6h18" />
+                                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        </svg>
                                     </button>
 
                                 </td>
@@ -118,6 +134,42 @@
                         </template>
                     </tbody>
                 </table>
+
+                {{-- ── Paginator ──────────────────────────────────────────────── --}}
+                <div class="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-500"
+                    x-show="lastPage > 1">
+
+                    <span x-text="`Page ${currentPage} of ${lastPage} · ${totalFiles} files`"></span>
+
+                    <div class="flex gap-1">
+
+                        {{-- Previous --}}
+                        <button @click="loadPage(currentPage - 1)" :disabled="currentPage === 1"
+                            class="px-3 py-1 rounded-xl border transition" :class="currentPage === 1
+                ? 'opacity-40 cursor-not-allowed'
+                : 'hover:bg-primary hover:text-white'">
+                            &lsaquo;
+                        </button>
+
+                        {{-- Page numbers --}}
+                        <template x-for="p in lastPage" :key="p">
+                            <button @click="loadPage(p)" class="px-3 py-1 rounded-xl border transition" :class="p === currentPage
+                    ? 'bg-primary text-white border-primary'
+                    : 'hover:bg-primary hover:text-white'">
+                                <span x-text="p"></span>
+                            </button>
+                        </template>
+
+                        {{-- Next --}}
+                        <button @click="loadPage(currentPage + 1)" :disabled="currentPage === lastPage"
+                            class="px-3 py-1 rounded-xl border transition" :class="currentPage === lastPage
+                ? 'opacity-40 cursor-not-allowed'
+                : 'hover:bg-primary hover:text-white'">
+                            &rsaquo;
+                        </button>
+
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -140,7 +192,8 @@
                             class="px-4 py-2 text-sm border rounded-lg hover:scale-105 ">
                             Cancel
                         </button>
-                        <button @click="deleteFile()" class="px-4 py-2 hover:scale-105 text-sm bg-red-500 text-white rounded-lg">
+                        <button @click="deleteFile()"
+                            class="px-4 py-2 hover:scale-105 text-sm bg-red-500 text-white rounded-lg">
                             Delete
                         </button>
                     </div>

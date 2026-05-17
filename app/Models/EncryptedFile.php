@@ -9,6 +9,7 @@ class EncryptedFile extends Model
     protected $fillable = [
         'user_id',
         'original_name',
+        'size',
         'mime_type',
         'path',
     ];
@@ -23,5 +24,25 @@ class EncryptedFile extends Model
     public function owner()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function getFormattedSizeAttribute()
+    {
+        $bytes = $this->size;
+
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+        $bytes = max($bytes, 0);
+        $pow = $bytes > 0 ? floor(log($bytes, 1024)) : 0;
+        $pow = min($pow, count($units) - 1);
+
+        $bytes /= pow(1024, $pow);
+
+        return round($bytes, 2) . ' ' . $units[$pow];
+    }
+
+    public function getTotalFilesAttribute(): int
+    {
+        return EncryptedFile::all()->count();
     }
 }

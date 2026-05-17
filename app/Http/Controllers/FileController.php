@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Support\Facades\Log;
 
 class FileController extends Controller
 {
@@ -18,20 +19,23 @@ class FileController extends Controller
     {
         $userId = $request->user()->id;
 
-        $files = EncryptedFile::whereHas('fileKeys', function ($q) use ($userId) {
+        $paginator = EncryptedFile::whereHas('fileKeys', function ($q) use ($userId) {
             $q->where('user_id', $userId);
         })
             ->latest()
-            ->get()
-            ->map(fn ($file) => [
-                'id' => $file->id,
-                'original_name' => $file->original_name,
-                'mime_type' => $file->mime_type,
-                'size' => $file->formatted_size ?? null,
-                'uploaded_at' => $file->created_at->diffForHumans(),
-            ]);
+            ->paginate(5);
 
-        return response()->json($files);
+        $paginator->setCollection(
+            $paginator->getCollection()->map(fn ($file) => [
+                'id'            => $file->id,
+                'original_name' => $file->original_name,
+                'mime_type'     => $file->mime_type,
+                'size'          => $file->formatted_size ?? null,
+                'uploaded_at'   => $file->created_at->diffForHumans(),
+            ])
+        );
+
+        return response()->json($paginator);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -45,7 +49,7 @@ class FileController extends Controller
             'original_name' => 'required|string',
             'original_size' => 'required|integer',
         ]);
-
+        Log::info($request->original_size);
         // 1. store encrypted file
         $path = $request->file('file')->store('encrypted-files');
 
@@ -55,7 +59,10 @@ class FileController extends Controller
             'original_name' => $request->original_name,
             'mime_type' => $request->file('file')->getMimeType(),
             'path' => $path,
+            'size' => $request->original_size, // Store the file size
         ]);
+
+        Log::info($file);
 
         // 3. store encrypted AES key (for owner)
         FileKey::create([

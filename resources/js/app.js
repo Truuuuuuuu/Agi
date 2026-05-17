@@ -24,6 +24,10 @@ window.vaultApp = function () {
         deleteModal: { show: false, file: null },
         toasts: [],
 
+        currentPage: 1,
+        lastPage: 1,
+        totalFiles: 0,
+
         // ── LIFECYCLE ───────────────────────────────────────────
         async init() {
             await this.initUserKeys();
@@ -376,26 +380,37 @@ window.vaultApp = function () {
             }
         },
 
+
+
         // ────────────────────────────────────────────────────────
         // FILE LIST
         // ────────────────────────────────────────────────────────
 
-        async loadFiles() {
-            this.loadingFiles = true;
 
+        async loadPage(page) {
+            this.loadingFiles = true;
             try {
-                const resp = await fetch('/api/files', {
+                const resp = await fetch(`/api/files?page=${page}`, {
                     headers: { 'Accept': 'application/json' }
                 });
-
                 const data = await resp.json();
-                this.files = data;
+
+                this.files = data.data;
+                this.currentPage = data.current_page;
+                this.lastPage = data.last_page;
+                this.totalFiles = data.total;
             } catch {
                 this.toast('Failed to load files', 'error');
             } finally {
                 this.loadingFiles = false;
             }
         },
+
+        async loadFiles() {
+            await this.loadPage(1);
+        },
+
+
 
         // ────────────────────────────────────────────────────────
         // UI
