@@ -19,14 +19,4 @@ Route::middleware('auth')->group(function () {
 });
 
 
-Route::middleware(['auth', 'verified'])->group(function () {
-
-    Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
-
-    Route::get('/api/files', [FileController::class, 'index']);
-    Route::post('/api/files', [FileController::class, 'store']);
-    Route::get('/api/files/{file}', [FileController::class, 'download']);
-    Route::delete('/api/files/{file}', [FileController::class, 'destroy']);
-});
-
 require __DIR__.'/auth.php';

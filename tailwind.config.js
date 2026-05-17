@@ -11,6 +11,12 @@ export default {
 
     theme: {
         extend: {
+            colors: {
+                primary:{
+                    DEFAULT: '#460C17',
+                    hover: '#320811',
+                },
+            },
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },

@@ -2,107 +2,133 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\File;
+use App\Models\EncryptedFile;
+use App\Models\FileKey;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FileController extends Controller
 {
-    // ─── List files for the authenticated user ─────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // LIST FILES (owned + shared via file_keys)
+    // ─────────────────────────────────────────────────────────────
     public function index(Request $request): JsonResponse
     {
-        $files = $request->user()
-            ->files()
+        $userId = $request->user()->id;
+
+        $files = EncryptedFile::whereHas('fileKeys', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
             ->latest()
             ->get()
-            ->map(fn (File $f) => [
-                'id' => $f->id,
-                'original_name' => $f->original_name,
-                'mime_type' => $f->mime_type,
-                'size' => $f->formatted_size,
-                'sha256_hash' => $f->sha256_hash,
-                'iv' => $f->iv,
-                'uploaded_at' => $f->created_at->diffForHumans(),
+            ->map(fn ($file) => [
+                'id' => $file->id,
+                'original_name' => $file->original_name,
+                'mime_type' => $file->mime_type,
+                'size' => $file->formatted_size ?? null,
+                'uploaded_at' => $file->created_at->diffForHumans(),
             ]);
 
         return response()->json($files);
     }
 
-    // ─── Upload: receive the AES-GCM encrypted blob + metadata ───────────────
+    // ─────────────────────────────────────────────────────────────
+    // UPLOAD FILE (AES file encryption + RSA wrapped key)
+    // ─────────────────────────────────────────────────────────────
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => ['required', 'file', 'max:51200'],   // 50 MB max
-            'iv' => ['required', 'string', 'size:24'],   // 12-byte IV → 24 hex chars
-            'sha256_hash' => ['required', 'string', 'size:64'],   // SHA-256 hex of ORIGINAL
-            'original_name' => ['required', 'string', 'max:255'],
+            'file' => 'required|file',
+            'encrypted_key' => 'required',
+            'original_name' => 'required|string',
+            'original_size' => 'required|integer',
         ]);
 
-        $uploaded = $request->file('file');
-        $storedName = Str::uuid().'.enc';
+        // 1. store encrypted file
+        $path = $request->file('file')->store('encrypted-files');
 
-        // Store the already-encrypted blob; no server-side encryption needed
-        $uploaded->storeAs('encrypted', $storedName, 'private');
+        // 2. create file record
+        $file = EncryptedFile::create([
+            'user_id' => $request->user()->id,
+            'original_name' => $request->original_name,
+            'mime_type' => $request->file('file')->getMimeType(),
+            'path' => $path,
+        ]);
 
-        $file = $request->user()->files()->create([
-            'original_name' => $request->input('original_name'),
-            'stored_name' => $storedName,
-            'mime_type' => $uploaded->getClientMimeType(),
-            'size' => $uploaded->getSize(),
-            'sha256_hash' => $request->input('sha256_hash'),
-            'iv' => $request->input('iv'),
+        // 3. store encrypted AES key (for owner)
+        FileKey::create([
+            'file_id' => $file->id,
+            'user_id' => $request->user()->id,
+            'encrypted_key' => base64_encode(
+                $request->file('encrypted_key')->getContent()
+            ),
         ]);
 
         return response()->json([
-            'message' => 'File uploaded successfully.',
-            'file' => [
-                'id' => $file->id,
-                'original_name' => $file->original_name,
-                'mime_type' => $file->mime_type,
-                'size' => $file->formatted_size,
-                'sha256_hash' => $file->sha256_hash,
-                'iv' => $file->iv,
-                'uploaded_at' => $file->created_at->diffForHumans(),
-            ],
-        ], 201);
-    }
-
-    // ─── Download: stream the encrypted blob; decryption happens client-side ──
-    public function download(Request $request, File $file):  BinaryFileResponse
-    {
-        // Ensure the file belongs to the authenticated user
-        if ($file->user_id !== $request->user()->id) {
-            abort(403, 'Unauthorized.');
-        }
-
-        $path = Storage::disk('private')->path("encrypted/{$file->stored_name}");
-
-        if (! file_exists($path)) {
-            abort(404, 'File not found on disk.');
-        }
-
-        return response()->download($path, $file->original_name.'.enc', [
-            'Content-Type' => 'application/octet-stream',
-            'X-File-IV' => $file->iv,
-            'X-File-SHA256' => $file->sha256_hash,
-            'X-Original-Name' => rawurlencode($file->original_name),
-            'X-Original-Mime' => $file->mime_type,
+            'file' => $file,
         ]);
     }
 
-    // ─── Delete ────────────────────────────────────────────────────────────────
-    public function destroy(Request $request, File $file): JsonResponse
+    public function serve(Request $request, EncryptedFile $file): BinaryFileResponse
+    {
+        $userId = $request->user()->id;
+
+        FileKey::where('file_id', $file->id)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        if (! Storage::exists($file->path)) {
+            abort(404, 'File not found on disk.');
+        }
+
+        return response()->file(Storage::path($file->path), [
+            'Content-Type' => 'application/octet-stream',
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // DOWNLOAD (return encrypted file + user-specific key)
+    // ─────────────────────────────────────────────────────────────
+    public function download(Request $request, EncryptedFile $file): JsonResponse
+    {
+        $userId = $request->user()->id;
+
+        $fileKey = FileKey::where('file_id', $file->id)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        if (! Storage::exists($file->path)) {
+            abort(404, 'File not found on disk.');
+        }
+
+        return response()->json([
+            'file_url'      => url("/api/files/{$file->id}/serve"), 
+            'encrypted_key' => $fileKey->encrypted_key,
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // DELETE FILE (only owner)
+    // ─────────────────────────────────────────────────────────────
+    public function destroy(Request $request, EncryptedFile $file): JsonResponse
     {
         if ($file->user_id !== $request->user()->id) {
             abort(403, 'Unauthorized.');
         }
 
-        Storage::disk('private')->delete("encrypted/{$file->stored_name}");
+        // delete file from storage
+        Storage::delete($file->path);
+
+        // delete related keys (important)
+        FileKey::where('file_id', $file->id)->delete();
+
+        // delete file record
         $file->delete();
 
-        return response()->json(['message' => 'File deleted.']);
+        return response()->json([
+            'message' => 'File deleted.',
+        ]);
     }
 }
