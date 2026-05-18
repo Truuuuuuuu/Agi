@@ -1,3 +1,4 @@
+import '../css/app.css';
 import './bootstrap';
 import Alpine from 'alpinejs';
 
@@ -7,8 +8,11 @@ import { encryptAndUploadFile } from './services/uploads';
 import { decryptAndDownloadFile } from './services/downloads';
 import {fetchFilesPage, deleteFileRequest} from './services/api';
 import {toast, fmtBytes} from './services/ui';
+import { toastManager } from './services/toast'
 
 window.Alpine = Alpine;
+
+Alpine.data('toastManager', toastManager)
 
 window.vaultApp = function () {
     return {
@@ -63,7 +67,8 @@ window.vaultApp = function () {
                     f => f.id !== this.deleteModal.file.id
                 );
 
-                this.toast('File deleted successfully', 'success');
+                window.toast('File deleted successfully', 'success')
+
 
             } catch (e) {
                 this.toast('Delete failed: ' + e.message, 'error');

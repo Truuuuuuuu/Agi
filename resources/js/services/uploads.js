@@ -91,10 +91,7 @@ export async function encryptAndUploadFile(ctx) {
 
         ctx.uploadPct = 100;
 
-        ctx.toast(
-            'File uploaded securely 🔐',
-            'success'
-        );
+        window.toast('File uploaded successfully', 'success')
 
         ctx.clearPending();
 

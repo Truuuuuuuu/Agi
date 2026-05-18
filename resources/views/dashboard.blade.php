@@ -15,7 +15,7 @@
         </div>
     </x-slot>
 
-    <div class="py-3" x-data="vaultApp()" x-init="init()">
+    <div class="py-3" x-data="vaultApp()" x-init="init()" >
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8  flex gap-5 w-full">
 
             {{-- ── Upload ─────────────────────────────────────────────────────── --}}
@@ -75,15 +75,15 @@
                     </button>
                 </div>
 
-                <div x-show="loadingFiles" class="p-10 text-center text-gray-400">
+                {{-- <div x-show="loadingFiles" class="p-10 text-center text-gray-400"  x-cloak>
                     Loading...
-                </div>
+                </div> --}}
 
-                <div x-show="!loadingFiles && files.length === 0" class="p-10 text-center text-gray-400">
+                <div x-show="!loadingFiles && files.length === 0" class="p-10 text-center text-gray-400"  x-cloak>
                     No files yet
                 </div>
 
-                <table class="w-full text-sm" x-show="files.length > 0">
+                <table class="w-full text-sm" x-show="files.length > 0"  x-cloak>
                     <thead class="text-left border-b">
                         <tr class="text-primary">
                             <th class="p-3">File</th>
@@ -137,7 +137,7 @@
 
                 {{-- ── Paginator ──────────────────────────────────────────────── --}}
                 <div class="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-500"
-                    x-show="lastPage > 1">
+                    x-show="lastPage > 1"  x-cloak>
 
                     <span x-text="`Page ${currentPage} of ${lastPage} · ${totalFiles} files`"></span>
 
@@ -177,7 +177,7 @@
 
         {{-- ── DELETE MODAL ───────────────────────────────────────────── --}}
         <template x-teleport="body">
-            <div x-show="deleteModal.show" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div x-show="deleteModal.show" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"  x-cloak>
                 <div class="bg-white p-6 rounded-xl w-96 shadow-xl">
                     <h3 class="font-semibold text-lg mb-1">Delete File</h3>
                     <p class="text-sm text-gray-500 mb-4">
