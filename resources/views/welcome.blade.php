@@ -67,6 +67,38 @@
                 </div>
             </main>
         </div>
+        <div class=" w-full max-w-7xl flex gap-3 justify-between text-primary">
+            <div class="flex flex-col items-center">
+                <div class="bg-white rounded-xl mb-1 p-2 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-lock-icon lucide-file-lock"><path d="M4 9.8V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M9 17v-2a2 2 0 0 0-4 0v2"/><rect width="8" height="5" x="3" y="17" rx="1"/></svg>
+                </div>
+                
+                    <p class="text-xl font-bold tracking-wide">CONFIDENTIALITY</p>
+                    <p class="text-xs text-black/70">Ensures files remain private and accessible only to authorized users.</p>
+            </div>
+
+            <div class="flex flex-col items-center ">
+                <div class="bg-white rounded-xl mb-1 p-2 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-fingerprint-pattern-icon lucide-fingerprint-pattern"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></svg>
+
+                </div>
+                
+                    <p class="text-xl font-bold tracking-wide">AUTHENTICATION</p>
+                    <p class="text-xs text-black/70">Verifies user identity before granting system access</p>
+            </div>
+
+            <div class="flex flex-col items-center">
+                <div class="bg-white rounded-xl mb-1 p-2 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check-icon lucide-shield-check"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+
+                </div>
+                
+                    <p class="text-xl font-bold tracking-wide">INTEGRITY</p>
+                    <p class="text-xs text-black/70">Protects data from unauthorized modification or tampering</p>
+            </div>
+
+            
+        </div>
 
         @if (Route::has('login'))
             <div class="h-14.5 hidden lg:block"></div>
