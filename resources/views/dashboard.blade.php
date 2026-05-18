@@ -10,7 +10,7 @@
                          text-emerald-700 dark:text-emerald-400
                          border border-emerald-200 dark:border-emerald-800">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Client-Side AES Encryption
+                Online
             </span>
         </div>
     </x-slot>
